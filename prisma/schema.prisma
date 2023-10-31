@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NEXT_PUBLIC_DATABASE_URL")
+}
+
+model Route {
+  id String @id @default(cuid())
+  originZipId String
+  destinationZipId String
+  isAllowed Boolean  @default(false)
+
+
+  //relationships
+  originZip ZipCode @relation("RouteZipCodeOrigin",fields: [originZipId], references: [id])
+  destinationZip ZipCode @relation("RouteZipCodeDest",fields: [destinationZipId], references: [id]) 
+
+}
+
+model ZipCode {
+  id String @id @default(cuid())
+  cityId String 
+  zip String
+  isDeleted Boolean @default(false)
+
+
+  routesDest Route[] @relation("RouteZipCodeOrigin")
+  routesOrigin Route[] @relation("RouteZipCodeDest")
+  city City @relation(fields: [cityId], references: [id])
+  
+}
+
+model City {
+  id String @id @default(cuid())
+  name String
+  stateId String
+  isDeleted Boolean @default(false)
+
+  zipCodes ZipCode[]
+  state State @relation(fields: [stateId], references: [id])
+}
+
+
+model State {
+  id String @id @default(cuid())
+  name String
+  countryId String
+  abbreviation String
+  isDeleted Boolean @default(false)
+
+  country Country @relation(fields: [countryId], references: [id])
+  cities  City[]
+}
+
+model Country {
+  id String @id @default(cuid())
+  name String
+  iso2 String
+  isDeleted Boolean @default(false)
+
+  states State[]
+}
+
+
+
+model RateItem {
+  id String @id @default(cuid())
+  name String
+  total Float
+  rateId String 
+
+  rate Rate @relation(fields: [rateId], references: [id])
+}
+
+model RateType {
+  id String @id @default(cuid())
+  name String
+  code String
+
+  rates Rate[]
+}
+
+model Rate {
+  id String @id @default(cuid())
+  rateNo BigInt @default(autoincrement())
+  total Float 
+  daysInTransit DateTime @db.Timestamptz(6)
+  estimatedPickUpDate DateTime @db.Timestamptz(6)
+  remarks  String[]
+  rateTypeId String
+
+  rateType RateType @relation(fields: [rateTypeId], references: [id])
+  rateBreakDown RateItem[]
+  freightInfo FreightInfo[]
+}
+
+
+model FreightInfo {
+  id String @id @default(cuid())
+  weight Float
+  weightType String
+  length Float
+  width Float
+  height Float
+  class  Int
+  dimType String
+  rateId String
+
+  rate Rate @relation(fields: [rateId], references: [id])
+}
+
+
+
